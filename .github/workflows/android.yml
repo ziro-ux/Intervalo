@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['index.html', 'package.json', 'capacitor.config.json', '.github/workflows/android.yml']
+    paths: ['index.html', 'package.json', 'capacitor.config.json', 'android-res/**', '.github/workflows/android.yml']
 
 permissions:
   contents: read
@@ -47,6 +47,10 @@ jobs:
           printf '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n  <color name="ic_launcher_background">#13243A</color>\n</resources>\n' > $RES/values/ic_launcher_background.xml
           # Barra de status e de navegação na cor da noite da Tata
           sed -i '/name="AppTheme.NoActionBar"/a\        <item name="android:statusBarColor">#13243A</item>\n        <item name="android:navigationBarColor">#13243A</item>' $RES/values/styles.xml
+          # Ícone pequeno das notificações (lembretes)
+          cp -r android-res/* $RES/
+          # Notificações (Android 13+)
+          sed -i 's#</manifest>#    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n</manifest>#' android/app/src/main/AndroidManifest.xml
           # Câmera para o leitor de código de barras
           sed -i 's#</manifest>#    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />\n</manifest>#' android/app/src/main/AndroidManifest.xml
           # Cada build ganha um número de versão maior, para instalar por cima do anterior
