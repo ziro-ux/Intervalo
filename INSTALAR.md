@@ -28,8 +28,9 @@ Compartilhar → **Adicionar à Tela de Início**.
 Já vem pronto em `.github/workflows/android.yml`, usando o Capacitor. O APK leva o app dentro, abre em tela cheia e funciona sem internet.
 1. Envie todos os arquivos ao repositório (inclusive `package.json`, `capacitor.config.json` e `intervalo-debug.keystore`).
 2. Aba **Actions → Gerar APK → Run workflow**. Leva uns 5 a 10 minutos.
-3. Quando terminar, abra a execução, role até **Artifacts** e baixe **Intervalo-APK** (um .zip com o `app-debug.apk`).
+3. Quando terminar, abra **Releases** no repositório (ou o link `.../releases/latest`) e baixe o `Intervalo-1.N.apk`.
 4. No celular, abra o APK e permita instalar apps desconhecidos quando o Android pedir.
+5. Depois de instalado, o próprio app avisa quando sair versão nova (Perfil → Atualizações) e baixa o APK do release mais recente.
 - Cada build recebe um número de versão maior e usa a mesma chave de assinatura, então o APK novo instala por cima do anterior sem perder seus dados.
 - É um APK de teste (debug), bom para uso pessoal. Para a Play Store seria preciso um APK assinado com chave própria e secreta.
 - Os dados do APK ficam separados dos do site: use **Perfil → Exportar backup** num e **Importar backup** no outro.
