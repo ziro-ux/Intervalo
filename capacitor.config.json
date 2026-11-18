@@ -3,5 +3,6 @@
   "appName": "Intervalo",
   "webDir": "www",
   "backgroundColor": "#13243a",
-  "server": { "androidScheme": "https" }
+  "server": { "androidScheme": "https" },
+  "android": { "adjustMarginsForEdgeToEdge": "auto" }
 }
