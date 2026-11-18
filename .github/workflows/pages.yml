@@ -33,6 +33,8 @@ jobs:
           npx playwright install --with-deps chromium
 
       - name: Montar e testar
+        env:
+          USDA_API_KEY: ${{ secrets.USDA_API_KEY }}
         run: |
           node build.mjs
           node tests/e2e.mjs

@@ -3,7 +3,7 @@
 $('openScanBtn').onclick=()=>selectFoodTab('barcode');
 $('openVoiceBtn').onclick=()=>selectFoodTab('voice');
 document.querySelectorAll('#foodChips button').forEach(b=>b.onclick=()=>{$('foodSort').value=b.dataset.chip;catalogLimit=40;renderCatalog();scheduleOnline();$('foodList').parentElement.scrollTop=0});
-const _oc=openCatalog;openCatalog=function(forMeal){onlineAll=false;onlineQuery='';_oc(forMeal);$('kcalOnly').hidden=!forMeal;dishBar()};
+const _oc=openCatalog;openCatalog=function(forMeal){onlineAll=usdaAll=false;onlineQuery='';_oc(forMeal);$('kcalOnly').hidden=!forMeal;dishBar()};
 function dishBar(){const show=catalogForMeal&&basket.length>=2;$('dishBar').hidden=!show;if(show)$('dishBarText').textContent=basket.length+' alimentos selecionados'}
 const _rb=renderBasket;renderBasket=function(){_rb();dishBar()};
 // porção: título legível, favorito e quantidades rápidas

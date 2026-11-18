@@ -27,6 +27,7 @@ async function scenario(name, fn, { native = false, seed = null } = {}) {
     return r.fulfill({ status: 404, json: { status: 0 } });
   });
   await ctx.route(/openfoodfacts\.org\/(search|cgi)/, r => r.fulfill({ json: { hits: [], products: [] } }));
+  await ctx.route(/api\.nal\.usda\.gov/, r => r.fulfill({ json: { foods: [] } }));
   await ctx.route('https://api.github.com/**', r => r.fulfill({ json: { tag_name: 'v0.0', assets: [] } }));
   const page = await ctx.newPage();
   const errors = [];
@@ -130,6 +131,33 @@ await scenario('busca online: frase limpa, kJ, marcas iguais, dados incompletos'
   await p.click('#foodList .catalog-row:has-text("Azeite aromatizado") button'); await p.waitForTimeout(300);
   assert.equal(await p.inputValue('#foodName'), 'Azeite aromatizado');
   assert.equal(await p.inputValue('#foodBarcode'), '7891000000035');
+}, { seed: seeded });
+
+await scenario('USDA em português: busca traduzida e resultado traduzido', async p => {
+  const urls = [];
+  const nut = (id, value) => ({ nutrientId: id, value });
+  await p.route(/api\.nal\.usda\.gov/, r => { urls.push(r.request().url()); return r.fulfill({ json: { foods: [
+    { fdcId: 171477, description: 'Chicken, broilers or fryers, breast, meat only, cooked, roasted', foodNutrients: [nut(1008, 165), nut(1005, 0), nut(1003, 31), nut(1004, 3.6), nut(1093, 74)] },
+    { fdcId: 746763, description: 'Chicken, breast, boneless, skinless, raw', foodNutrients: [nut(2047, 120), nut(1005, 0), nut(1003, 22.5), nut(1004, 2.6), nut(1079, 0)] },
+    { fdcId: 999, description: 'Chicken, sem energia', foodNutrients: [nut(1005, 1)] } ] } }); });
+  await p.evaluate(() => { prepareMeal(1); openCatalog(true); });
+  await p.fill('#foodSearch', 'peito de frango'); await p.waitForTimeout(2200);
+  assert.ok(urls.length >= 1, 'não consultou a USDA');
+  const q = new URL(urls[0]).searchParams;
+  assert.equal(q.get('query'), 'breast chicken'); assert.equal(q.get('requireAllWords'), 'true');
+  const text = await p.textContent('#foodList');
+  assert.match(text, /Alimentos genéricos \(USDA, em português\) · 2/);
+  assert.match(text, /Frango, de corte, peito, apenas carne, cozido, assado/);
+  assert.match(text, /Frango, peito, sem osso, sem pele, cru/);
+  assert.ok(!/sem energia/.test(text), 'item sem calorias apareceu');
+  await p.click('#foodList .catalog-row:has-text("sem osso") .food-add'); await p.waitForTimeout(300);
+  await p.click('#portionQuick button:nth-child(2)'); await p.click('#portionForm .primary'); await p.waitForTimeout(300);
+  await p.click('#finishFoods'); await p.waitForTimeout(400);
+  const st = await S(p);
+  assert.equal(st.meals.length, 1); assert.equal(st.meals[0].food.id, 'usda-746763'); assert.equal(st.meals[0].food.kcal, 120);
+  // termos que o dicionário não conhece não geram consulta
+  await p.evaluate(() => { openCatalog(true); }); await p.fill('#foodSearch', 'xyzzy'); await p.waitForTimeout(2200);
+  assert.equal(urls.length, 1, 'consultou a USDA sem termo traduzido');
 }, { seed: seeded });
 
 await scenario('código de barras: busca automática e valores completos', async p => {

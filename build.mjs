@@ -18,6 +18,8 @@ const js = list(src('js')).map(f => text(src('js', f))).join('\n');
 const taco = JSON.stringify(JSON.parse(text(src('data', 'taco.json'))));
 const zxing = text(src('vendor', 'zxing.min.js'));
 const license = text(src('vendor', 'zxing-LICENSE.txt'));
+// Chave gratuita do USDA FoodData Central (https://fdc.nal.usda.gov/api-key-signup). Sem ela, usa a chave de teste, que tem limite baixo.
+const usdaKey = (process.env.USDA_API_KEY || '').replace(/[^A-Za-z0-9]/g, '') || 'DEMO_KEY';
 const font = name => fs.readFileSync(src('fonts', name)).toString('base64');
 
 const faces = inline => {
@@ -37,7 +39,7 @@ function page(single) {
     '<link rel="preload" href="fonts/lora.ttf" as="font" type="font/ttf" crossorigin>');
   put('/*@css*/', faces(single) + css);
   put('<!--@zxing-->', single ? `<script>${zxing}</script>` : '');
-  put('/*@js*/', js.replace('/*@taco*/[]', () => taco));
+  put('/*@js*/', js.replace('/*@taco*/[]', () => taco).replace('__USDA_KEY__', () => usdaKey));
   put('<!--@zxing-license-->', `<script type="text/plain" id="zxingLicense">${license}</script>`);
   return html;
 }
