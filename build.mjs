@@ -19,7 +19,8 @@ const taco = JSON.stringify(JSON.parse(text(src('data', 'taco.json'))));
 const zxing = text(src('vendor', 'zxing.min.js'));
 const license = text(src('vendor', 'zxing-LICENSE.txt'));
 // Chave gratuita do USDA FoodData Central (https://fdc.nal.usda.gov/api-key-signup). Sem ela, usa a chave de teste, que tem limite baixo.
-const usdaKey = (process.env.USDA_API_KEY || '').replace(/[^A-Za-z0-9]/g, '') || 'DEMO_KEY';
+// A variável USDA_API_KEY (secret do GitHub) tem prioridade; senão vale a chave abaixo. A chave vai dentro do app e fica pública.
+const usdaKey = (process.env.USDA_API_KEY || '').replace(/[^A-Za-z0-9]/g, '') || 'nkgf88cqTqWdHNNGbLhmPhFrqfFgLmbh6dpJTzPh';
 const font = name => fs.readFileSync(src('fonts', name)).toString('base64');
 
 const faces = inline => {
