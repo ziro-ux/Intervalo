@@ -7,7 +7,7 @@ on:
     paths: ['index.html', 'package.json', 'capacitor.config.json', 'android-res/**', '.github/workflows/android.yml']
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   apk:
@@ -31,6 +31,8 @@ jobs:
         run: |
           mkdir www
           cp index.html www/
+          # versão e repositório para o aviso de atualização dentro do app
+          sed -i "s#__APP_VERSION__#1.${{ github.run_number }}#g; s#__APP_REPO__#${{ github.repository }}#g" www/index.html
           npx cap add android
 
       - name: Ícone, cores e permissões
@@ -64,8 +66,14 @@ jobs:
           cd android
           ./gradlew assembleDebug --no-daemon
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Intervalo-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 30
+      - name: Publicar release com o APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VER: 1.${{ github.run_number }}
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk "Intervalo-$VER.apk"
+          MSG=$(git log -1 --pretty=%s)
+          gh release create "v$VER" "Intervalo-$VER.apk" \
+            --title "Intervalo $VER" \
+            --notes "Baixe o arquivo Intervalo-$VER.apk abaixo e instale por cima do app atual. Seus dados continuam no aparelho. Mudança: $MSG" \
+            --latest
