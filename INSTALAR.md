@@ -23,3 +23,13 @@ Compartilhar → **Adicionar à Tela de Início**.
 - Seus dados ficam no **aparelho** (localStorage do endereço publicado). Mudar de endereço ou de navegador começa do zero: use **Perfil → Exportar backup** antes e **Importar backup** depois.
 - Sem o GitHub Actions, para atualizar troque o index.html e mude `CACHE = 'intervalo-v14'` no sw.js (ex.: v15).
 - O app continua funcionando só com o index.html, sem instalar.
+
+## Gerar o APK (Android) com GitHub Actions
+Já vem pronto em `.github/workflows/android.yml`, usando o Capacitor. O APK leva o app dentro, abre em tela cheia e funciona sem internet.
+1. Envie todos os arquivos ao repositório (inclusive `package.json`, `capacitor.config.json` e `intervalo-debug.keystore`).
+2. Aba **Actions → Gerar APK → Run workflow**. Leva uns 5 a 10 minutos.
+3. Quando terminar, abra a execução, role até **Artifacts** e baixe **Intervalo-APK** (um .zip com o `app-debug.apk`).
+4. No celular, abra o APK e permita instalar apps desconhecidos quando o Android pedir.
+- Cada build recebe um número de versão maior e usa a mesma chave de assinatura, então o APK novo instala por cima do anterior sem perder seus dados.
+- É um APK de teste (debug), bom para uso pessoal. Para a Play Store seria preciso um APK assinado com chave própria e secreta.
+- Os dados do APK ficam separados dos do site: use **Perfil → Exportar backup** num e **Importar backup** no outro.

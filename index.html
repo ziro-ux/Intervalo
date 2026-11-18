@@ -1414,7 +1414,8 @@ if(!state.onboarded&&!recoveryBlocked&&!readFailure)setTimeout(obOpen,350);
 
 // ----- instalação -----
 let deferred=null;
-const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const native=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
+const standalone=native||matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 function installText(){const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
  $('installBtn').hidden=!deferred;
  $('installText').textContent=standalone?'Você já está usando o app instalado.':deferred?'Instale para abrir em tela cheia, com ícone na tela inicial.':ios?'No Safari, toque em Compartilhar e depois em Adicionar à Tela de Início.':location.protocol==='file:'?'Para instalar, publique os arquivos que acompanham o app em um endereço https. Veja o guia INSTALAR.md.':'No menu do navegador, escolha Instalar app ou Adicionar à tela inicial.'}
@@ -1422,7 +1423,8 @@ addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;install
 addEventListener('appinstalled',()=>{deferred=null;installText();toast('Intervalo instalado')});
 $('installBtn').onclick=async()=>{if(!deferred)return;deferred.prompt();try{await deferred.userChoice}catch{}deferred=null;installText()};
 installText();
-if(/^https?:$/.test(location.protocol)){
+if(native){$('export').onclick=async()=>{try{const P=window.Capacitor.Plugins,name='intervalo-backup-'+new Date().toISOString().slice(0,10)+'.json';const r=await P.Filesystem.writeFile({path:name,data:JSON.stringify(state,null,2),directory:'CACHE',encoding:'utf8'});await P.Share.share({title:'Backup do Intervalo',url:r.uri,dialogTitle:'Salvar backup'});$('backupStatus').textContent='Backup pronto. Escolha onde salvar.'}catch(e){if(!/cancel/i.test(String(e&&e.message)))$('backupStatus').textContent='Não consegui gerar o backup. Tente de novo.'}}}
+if(/^https?:$/.test(location.protocol)&&!native){
  try{const l=document.createElement('link');l.rel='manifest';l.href='manifest.webmanifest';document.head.append(l);
   const a=document.createElement('link');a.rel='apple-touch-icon';a.href='icon-192.png';document.head.append(a);
   if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{})}catch{}
