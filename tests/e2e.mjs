@@ -107,6 +107,31 @@ await scenario('busca: nome legível, porção rápida, prato e só calorias', a
   assert.ok(!st.foods.some(f => f.id.startsWith('kcal-')), 'só calorias entrou no catálogo');
 }, { seed: seeded });
 
+await scenario('busca online: frase limpa, kJ, marcas iguais, dados incompletos', async p => {
+  const urls = [];
+  await p.route(/search\.openfoodfacts\.org/, r => { urls.push(r.request().url()); return r.fulfill({ json: { hits: [
+    { code: '7891000000011', product_name: 'Azeite de oliva extra virgem', brands: 'Gallo', nutriments: { 'energy-kcal_100g': 884, carbohydrates_100g: 0, proteins_100g: 0, fat_100g: 100 } },
+    { code: '7891000000028', product_name: 'Azeite suave', brands: 'Andorinha', nutriments: { energy_100g: 3700, carbohydrates_100g: 0, proteins_100g: 0, fat_100g: 100 } },
+    { code: '7891000000029', product_name: 'Azeite suave', brands: 'Carbonell', nutriments: { energy_100g: 3700, carbohydrates_100g: 0, proteins_100g: 0, fat_100g: 100 } },
+    { code: '7891000000035', product_name: 'Azeite aromatizado', brands: 'Bom', nutriments: { 'energy-kcal_100g': 880, carbohydrates_100g: 0, proteins_100g: 0 } },
+    { code: '7891000000042', product_name: 'Azeite sem nada', nutriments: {} } ] } }); });
+  await p.evaluate(() => { prepareMeal(1); openCatalog(true); });
+  await p.fill('#foodSearch', 'azeites de oliva'); await p.waitForTimeout(2200);
+  assert.ok(urls.length >= 1, 'não buscou na internet');
+  assert.match(decodeURIComponent(urls[0]), /q=azeite oliva&/, 'frase não foi limpa: ' + urls[0]);
+  const rows = await p.$$eval('#foodList .catalog-row strong', e => e.map(x => x.textContent));
+  assert.equal(rows.filter(x => x === 'Azeite suave').length, 2, 'marcas diferentes viraram uma só: ' + rows.join(' | '));
+  assert.ok(rows.includes('Azeite de oliva extra virgem'));
+  const kcal = await p.$$eval('#foodList .catalog-row', e => e.find(r => /Andorinha/.test(r.textContent)).querySelector('.food-kcal').textContent);
+  assert.match(kcal, /884/, 'kJ não virou kcal: ' + kcal);
+  const text = await p.textContent('#foodList');
+  assert.match(text, /Dados incompletos · 1/); assert.match(text, /faltam: gorduras/);
+  assert.ok(!rows.includes('Azeite sem nada'), 'produto sem nenhum dado apareceu');
+  await p.click('#foodList .catalog-row:has-text("Azeite aromatizado") button'); await p.waitForTimeout(300);
+  assert.equal(await p.inputValue('#foodName'), 'Azeite aromatizado');
+  assert.equal(await p.inputValue('#foodBarcode'), '7891000000035');
+}, { seed: seeded });
+
 await scenario('código de barras: busca automática e valores completos', async p => {
   await p.evaluate(() => { prepareMeal(0); openCatalog(true); openScan(); });
   await p.waitForTimeout(300);

@@ -344,6 +344,7 @@ function foodRow(f){const row=el('div',undefined,'catalog-row'),main=el('button'
  main.append(title,el('small',sub));const kc=el('span',nfmt(Math.round(f.kcal))+' kcal','food-kcal');
  const choose=()=>catalogForMeal?openPortion(f):reviewFood(f);main.onclick=choose;add.onclick=choose;add.setAttribute('aria-label',(catalogForMeal?'Adicionar ':'Editar ')+displayName(f));
  row.append(main,kc,add);return row}
+function partialRow(x){const f=x.food,row=el('div',undefined,'catalog-row'),main=el('button'),add=el('button','›','food-add');main.type='button';add.type='button';main.append(el('strong',f.name),el('small',[f.brand||'','faltam: '+x.missing.map(k=>MISS_LABEL[k]).join(', ')].filter(Boolean).join(' · ')));const go=()=>openPrefilled(f,x.missing);main.onclick=go;add.onclick=go;add.setAttribute('aria-label','Completar '+f.name);row.append(main,el('span','','food-kcal'),add);return row}
 function dishKcal(d){return d.items.reduce((t,it)=>t+nutrients(it.food,it.amount).kcal,0)}
 function dishRow(d,withDelete){const row=el('div',undefined,'catalog-row dish-row'),main=el('button'),add=el('button','+','food-add');main.type='button';add.type='button';
  main.append(el('strong',d.name),el('small',d.items.length+(d.items.length===1?' item':' itens')+' · '+d.items.map(it=>displayName(it.food)).join(', ')));
@@ -368,6 +369,7 @@ function renderCatalog(){
  const rk=f=>bmap().get(f.id)?.r||999;matched.sort((a,b)=>T.get(a.id)-T.get(b.id)||starts(b)-starts(a)||used(b)-used(a)||rk(a)-rk(b)||displayName(a).length-displayName(b).length||displayName(a).localeCompare(displayName(b),'pt-BR'));
  const showOnline=chip==='frequent'||chip==='name',have=new Set(matched.map(f=>f.id)),online=showOnline?onlineFoods.filter(f=>!have.has(f.id)):[];
  const onlineBlock=()=>{if(!online.length)return;head('Da internet · '+online.length);const n=onlineAll?online.length:Math.min(5,online.length);for(const f of online.slice(0,n))list.append(foodRow(f));if(online.length>n){const more=el('button','Ver mais da internet ('+(online.length-n)+')','secondary more-online');more.type='button';more.onclick=()=>{onlineAll=true;renderCatalog()};list.append(more)}$('foodCredit').hidden=false};
+ const partBlock=()=>{const rows=(onlineFoods.partial||[]).filter(x=>!have.has(x.food.id));if(!showOnline||!rows.length)return;head('Dados incompletos · '+rows.length);for(const x of rows.slice(0,5))list.append(partialRow(x));$('foodCredit').hidden=false};
  if(onlineFirst)onlineBlock();
  if(showOnline&&terms.length){const ds=state.dishes.filter(dishMatch);if(ds.length){head('Seus pratos');for(const d of ds.slice(0,5))list.append(dishRow(d,false))}}
  const labels=['Seus alimentos','Mais comuns','Mais comuns','Outras opções'],multi=showOnline&&new Set([...T.values()].map(t=>labels[t])).size>1;let last='',shown=0;
@@ -375,7 +377,8 @@ function renderCatalog(){
  if(matched.length>catalogLimit){const more=el('button','Mostrar mais ('+(matched.length-catalogLimit)+')','secondary more-online');more.type='button';more.onclick=()=>{catalogLimit+=40;renderCatalog()};list.append(more)}
  if(similar.length){head('Resultados parecidos');for(const f of similar)list.append(foodRow(f))}
  if(!onlineFirst)onlineBlock();
- if(!matched.length&&!similar.length&&!online.length)list.append(el('p',chip==='favorite'?(raw?'Nenhum favorito com esse nome.':'Nenhum favorito ainda. Ao escolher um alimento, toque na estrela para guardar aqui.'):chip==='mine'?(raw?'Nenhum alimento seu com esse nome.':'Você ainda não cadastrou alimentos. Use "Cadastrar pelo rótulo" logo abaixo.'):chip==='verified'?'Nenhum alimento verificado com esse nome.':raw?'Nada com esse nome no aparelho.':'Nenhum alimento ainda.','food-empty'));
+ partBlock();
+ if(!matched.length&&!similar.length&&!online.length&&!(onlineFoods.partial||[]).length)list.append(el('p',chip==='favorite'?(raw?'Nenhum favorito com esse nome.':'Nenhum favorito ainda. Ao escolher um alimento, toque na estrela para guardar aqui.'):chip==='mine'?(raw?'Nenhum alimento seu com esse nome.':'Você ainda não cadastrou alimentos. Use "Cadastrar pelo rótulo" logo abaixo.'):chip==='verified'?'Nenhum alimento verificado com esse nome.':raw?'Nada com esse nome no aparelho.':'Nenhum alimento ainda.','food-empty'));
  if(showOnline&&raw.length>=2&&onlineQuery!==raw&&navigator.onLine!==false&&!onlineFirst){const nb=el('button','Buscar "'+raw+'" na internet','textbtn search-net');nb.type='button';nb.onclick=()=>{clearTimeout(onlineTimer);searchFoods(false,false)};list.append(nb)}
 }
 function reviewFood(f){if(state.foods.some(x=>x.id===f.id)){openFood(f);return}openFood(null);$('foodName').value=f.name;$('foodBarcode').value=f.barcode??'';$('foodBase').value=f.base;$('foodPortion').value=f.portion;for(const k of nutrientKeys)$('food'+fieldSuffix[k]).value=f[k];updateBase()}
@@ -391,19 +394,29 @@ function offFood(p){const n=p.nutriments||{},num=v=>v===undefined||v===null||v==
  f.kcal=kcal;f.carbs=carbs;f.protein=protein;f.fat=fat;f.fiber=Number.isFinite(fiber)?fiber:0;
  if(['ml','l','cl'].includes(String(p.product_quantity_unit).toLowerCase())){f.base='portion';f.portion='100 ml'}return validFood(f)?f:null}
 async function getJSON(url,ms){searchController?.abort();const ctrl=new AbortController();searchController=ctrl;const t=setTimeout(()=>ctrl.abort(),ms);try{const r=await fetch(url,{signal:ctrl.signal});if(!r.ok)throw Error('http '+r.status);return await r.json()}finally{clearTimeout(t)}}
-async function fetchFoods(query,barcode=false){const key=(barcode?'code:':'name:')+query.toLowerCase();const cached=foodCache.get(key);if(cached)return cached;const now=Date.now();while(requestTimes.length&&requestTimes[0]<now-60000)requestTimes.shift();if(requestTimes.length>=8)throw Error('Muitas buscas seguidas. Aguarde um minuto para buscar na internet de novo.');requestTimes.push(now);const seq=searchSequence;
- const fields='code,product_name,product_name_pt,nutriments,product_quantity_unit,brands,serving_size,serving_quantity';let result=[];
- if(barcode){const d=await getJSON('https://world.openfoodfacts.org/api/v3/product/'+encodeURIComponent(query)+'.json?fields='+fields,15000);result=(d.product?[d.product]:[]).map(offFood).filter(Boolean)}
- else{
-  try{const d=await getJSON('https://search.openfoodfacts.org/search?q='+encodeURIComponent(query)+'&page_size=30&langs=pt&fields=code,product_name,nutriments,product_quantity_unit,brands,serving_size,serving_quantity',9000);result=(d.hits||[]).map(offFood).filter(Boolean)}catch(e){if(seq!==searchSequence)throw Object.assign(Error('stale'),{name:'AbortError'})}
-  if(!result.length){const d=await getJSON('https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(query)+'&search_simple=1&action=process&json=1&page_size=30&sort_by=unique_scans_n&fields='+fields,15000);result=(d.products||[]).map(offFood).filter(Boolean)}
- }
- const seen=new Set();result=result.filter(f=>{const k=f.name.toLowerCase()+'|'+Math.round(f.kcal);if(seen.has(k))return false;seen.add(k);return true});
- foodCache.set(key,result);return result}
+function onlineTerms(raw){const out=[];for(const t of raw.toLocaleLowerCase('pt-BR').split(/\s+/)){const p=plainSearch(t);if(!p||STOP.has(p))continue;const s=stemTerm(p);out.push(s===p?t:s)}return out}
+// Produto do Open Food Facts com parte dos números faltando: aparece em "Dados incompletos" e abre o formulário para completar pelo rótulo.
+function offPartial(p){const code=String(p.code||'');if(!/^\d{8,14}$/.test(code))return null;const {food,missing}=offDraft(p,code);return food.name&&missing.length&&missing.length<4&&!missing.includes('name')?{food,missing}:null}
+async function fetchFoods(query,barcode=false){const key=(barcode?'code:':'name:')+query.toLowerCase();const cached=foodCache.get(key);if(cached)return cached;const seq=searchSequence;
+ const tick=()=>{const now=Date.now();while(requestTimes.length&&requestTimes[0]<now-60000)requestTimes.shift();if(requestTimes.length>=8)return false;requestTimes.push(now);return true};
+ const limitErr=()=>Error('Muitas buscas seguidas. Aguarde um minuto para buscar na internet de novo.');
+ const fields='code,product_name,product_name_pt,nutriments,product_quantity_unit,brands,serving_size,serving_quantity';
+ if(barcode){if(!tick())throw limitErr();const d=await getJSON('https://world.openfoodfacts.org/api/v3/product/'+encodeURIComponent(query)+'.json?fields='+fields,15000);const r=(d.product?[d.product]:[]).map(offFood).filter(Boolean);foodCache.set(key,r);return r}
+ const seen=new Set(),partSeen=new Set(),result=[],partial=[];let failed=null,calls=0;
+ const take=hits=>{for(const p of hits){const f=offFood(p);if(f){const k=f.name.toLowerCase()+'|'+(f.brand||'').toLowerCase()+'|'+Math.round(f.kcal);if(!seen.has(k)){seen.add(k);result.push(f)}}else{const x=offPartial(p);if(x&&!partSeen.has(x.food.id)){partSeen.add(x.food.id);partial.push(x)}}}};
+ // Cada chamada conta no limite por minuto. Erro de rede não é guardado no cache.
+ const run=async(url,ms,pick)=>{if(!tick()){if(!calls)throw limitErr();return}calls++;try{take(pick(await getJSON(url,ms)))}catch(e){if(seq!==searchSequence)throw Object.assign(Error('stale'),{name:'AbortError'});failed=e}};
+ const qs=onlineTerms(query),q1=qs.join(' ')||query,q2=qs.length>1?[...qs].sort((a,b)=>b.length-a.length)[0]:'';
+ const prim=q=>run('https://search.openfoodfacts.org/search?q='+encodeURIComponent(q)+'&page_size=30&langs=pt&fields='+fields,9000,d=>d.hits||[]);
+ await prim(q1);
+ if(result.length<3)await run('https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(q1)+'&search_simple=1&action=process&json=1&page_size=30&sort_by=unique_scans_n&fields='+fields,15000,d=>d.products||[]);
+ if(result.length<3&&q2)await prim(q2);
+ if(!result.length&&!partial.length&&failed)throw failed;
+ result.partial=partial;if(!failed)foodCache.set(key,result);return result}
 async function searchFoods(barcode=false,auto=false){const query=(barcode?$('barcodeInput').value:$('foodSearch').value).trim();if(barcode?!/^\d{8,14}$/.test(query):query.length<(auto?3:2)){if(!auto)$('foodStatus').textContent=barcode?'Digite de 8 a 14 números do código.':'Digite ao menos 2 letras para buscar.';return}
  if(navigator.onLine===false){$('foodStatus').textContent='Sem internet agora. Mostrando só os alimentos do aparelho.';return}
  const sequence=++searchSequence;$('foodStatus').textContent='Buscando na internet…';
- try{const result=await fetchFoods(query,barcode);if(sequence!==searchSequence||!$('catalogDialog').open)return;onlineFoods=result;onlineAll=false;onlineFirst=barcode;if(barcode){$('foodSearch').value='';$('foodSort').value='name'}renderCatalog();if(barcode)$('catalogDialog').scrollTop=0;if(!barcode)onlineQuery=query;$('foodStatus').textContent=result.length?'':'Nada na internet com dados completos para essa busca.'}
+ try{const result=await fetchFoods(query,barcode);if(sequence!==searchSequence||!$('catalogDialog').open)return;onlineFoods=result;onlineAll=false;onlineFirst=barcode;if(barcode){$('foodSearch').value='';$('foodSort').value='name'}renderCatalog();if(barcode)$('catalogDialog').scrollTop=0;if(!barcode)onlineQuery=query;$('foodStatus').textContent=result.length||(result.partial||[]).length?'':'Nada na internet para essa busca.'}
  catch(e){if(sequence!==searchSequence)return;$('foodStatus').textContent=e.name==='AbortError'?'A internet demorou demais. Mostrando só os alimentos do aparelho.':/Muitas buscas/.test(e.message)?e.message:'Não consegui buscar na internet agora. Mostrando só os alimentos do aparelho.'}}
 $('searchFoodForm').onsubmit=e=>{e.preventDefault();clearTimeout(onlineTimer);renderCatalog();searchFoods(false,false)};
 let scannedBarcode='',voiceGeneration=0,voiceListening=false,torchEnabled=false;
