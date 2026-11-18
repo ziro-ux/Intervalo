@@ -23,17 +23,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Montar o site
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar ferramentas
         run: |
-          mkdir _site
-          cp index.html manifest.webmanifest sw.js icon-*.png _site/
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Montar e testar
+        env:
+          USDA_API_KEY: ${{ secrets.USDA_API_KEY }}
+        run: |
+          node build.mjs
+          node tests/e2e.mjs
+
+      - name: Preparar o site
+        run: |
           # Cada publicação troca o nome do cache, então o celular baixa a versão nova sozinho.
-          sed -i "s/const CACHE = '[^']*'/const CACHE = 'intervalo-${GITHUB_SHA::7}'/" _site/sw.js
-          grep "const CACHE" _site/sw.js
+          sed -i "s/const CACHE = '[^']*'/const CACHE = 'intervalo-${GITHUB_SHA::7}'/" dist/sw.js
+          grep "const CACHE" dist/sw.js
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: dist
       - id: deployment
         uses: actions/deploy-pages@v4
