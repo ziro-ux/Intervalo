@@ -1,0 +1,5 @@
+/* ===== v18: área segura (barra de status) ===== */
+main{padding-top:calc(18px + env(safe-area-inset-top))}
+#catalogDialog{padding-top:calc(12px + env(safe-area-inset-top))}
+dialog,#onboardDialog{max-height:calc(var(--vvh,100dvh) - 8px - env(safe-area-inset-top))}
+#catalogDialog{max-height:100dvh}

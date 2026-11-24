@@ -1,0 +1,25 @@
+/* ---------- polimento: alvos de toque, telas estreitas e leitura ---------- */
+button,[role=button],summary,label.switch-row,a{touch-action:manipulation}
+/* alvos de toque de pelo menos 44 px */
+.chips button{min-height:44px}
+#foodList .food-add{width:44px;height:44px}
+.textbtn,#openGoals,#openCatalog,#changeDuration,#openPlan{min-height:44px}
+#openGoals,#openCatalog{display:inline-flex;align-items:center}
+.wk-head .icon-button{min-width:44px;min-height:44px}
+button[aria-label^="Desfazer"],button[aria-label^="Excluir"],button[aria-label^="Remover"]{min-height:44px;min-width:44px}
+.switch-row{min-height:44px}
+/* telas estreitas (320 px): nada passa da borda */
+.week-strip{grid-template-columns:repeat(7,minmax(0,1fr))}
+.day-selector{flex-wrap:wrap}
+.day-selector input{min-width:0}
+@media(max-width:360px){
+ .day-selector label{flex:1 0 100%}
+ .week-strip{gap:4px}.week-strip strong{font-size:15px}
+}
+/* título da semana sem quebra feia */
+.wk-title p{text-wrap:balance}
+/* seleção de texto e rolagem mais agradáveis */
+::selection{background:var(--green);color:var(--on-green)}
+html{scroll-behavior:smooth}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+summary{min-height:44px;box-sizing:border-box}
