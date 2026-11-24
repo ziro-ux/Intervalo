@@ -115,7 +115,8 @@ await scenario('busca online: frase limpa, kJ, marcas iguais, dados incompletos'
     { code: '7891000000028', product_name: 'Azeite suave', brands: 'Andorinha', nutriments: { energy_100g: 3700, carbohydrates_100g: 0, proteins_100g: 0, fat_100g: 100 } },
     { code: '7891000000029', product_name: 'Azeite suave', brands: 'Carbonell', nutriments: { energy_100g: 3700, carbohydrates_100g: 0, proteins_100g: 0, fat_100g: 100 } },
     { code: '7891000000035', product_name: 'Azeite aromatizado', brands: 'Bom', nutriments: { 'energy-kcal_100g': 880, carbohydrates_100g: 0, proteins_100g: 0 } },
-    { code: '7891000000042', product_name: 'Azeite sem nada', nutriments: {} } ] } }); });
+    { code: '7891000000042', product_name: 'Azeite sem nada', nutriments: {} },
+    { code: '7891000000059', product_name: 'Azeite impossível', brands: 'Erro', nutriments: { 'energy-kcal_100g': 300, carbohydrates_100g: 80, proteins_100g: 5, fat_100g: 60 } } ] } }); });
   await p.evaluate(() => { prepareMeal(1); openCatalog(true); });
   await p.fill('#foodSearch', 'azeites de oliva'); await p.waitForTimeout(2200);
   assert.ok(urls.length >= 1, 'não buscou na internet');
@@ -128,6 +129,7 @@ await scenario('busca online: frase limpa, kJ, marcas iguais, dados incompletos'
   const text = await p.textContent('#foodList');
   assert.match(text, /Dados incompletos · 1/); assert.match(text, /faltam: gorduras/);
   assert.ok(!rows.includes('Azeite sem nada'), 'produto sem nenhum dado apareceu');
+  assert.ok(!(await p.textContent('#foodList')).includes('Azeite impossível'), 'produto com valores impossíveis apareceu');
   await p.click('#foodList .catalog-row:has-text("Azeite aromatizado") button'); await p.waitForTimeout(300);
   assert.equal(await p.inputValue('#foodName'), 'Azeite aromatizado');
   assert.equal(await p.inputValue('#foodBarcode'), '7891000000035');

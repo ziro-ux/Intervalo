@@ -63,7 +63,7 @@ function renderGarden(){const panel=document.querySelector('.calendar-panel');if
   if(!fut){const kind=flower.has(k)?'flower':sprout.has(k)?'sprout':'soil';b.innerHTML=G_ICON[kind];const wet=wg>0&&(water.get(k)||0)>=wg;if(wet)b.append(el('span',undefined,'gd'));
    b.setAttribute('aria-label',dayLabel(k)+', '+({flower:'dia que conta na sequência',sprout:'dia com jejum',soil:'sem jejum'})[kind]+(wet?', meta de água batida':''));b.setAttribute('aria-pressed',String(k===selectedDay));
    b.onclick=()=>{selectedDay=k;renderHistory();document.querySelector('.day-details')?.scrollIntoView?.({block:'nearest',behavior:'smooth'})}}
-  g.append(b)}}
+  if(fut)b.setAttribute('aria-label',dayLabel(k)+', ainda não chegou');g.append(b)}}
 function renderWeek(){const s0=new Date();s0.setHours(12,0,0,0);s0.setDate(s0.getDate()-s0.getDay()+wkOff*7);const days=[];for(let i=0;i<7;i++){const d=new Date(s0);d.setDate(s0.getDate()+i);days.push(dayKey(d))}
  const tk=dayKey(),past=days.filter(k=>k<=tk),fmt=k=>parseDay(k).toLocaleDateString('pt-BR',{day:'numeric',month:'short'}).replace('.','');
  $('wkNext').disabled=wkOff>=0;$('wkRange').textContent=(wkOff===0?'Esta semana · ':wkOff===-1?'Semana passada · ':'')+fmt(days[0])+' a '+fmt(days[6]);

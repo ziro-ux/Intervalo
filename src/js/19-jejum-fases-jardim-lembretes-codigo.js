@@ -74,7 +74,7 @@ function renderGarden(){const panel=document.querySelector('.calendar-panel');if
   if(!fut){const x=ended.get(k),kind=x?.ok?'flower':x?.any||k===activeDay?'sprout':'soil';b.innerHTML=G_ICON[kind];const wet=wg>0&&(water.get(k)||0)>=wg;if(wet)b.append(el('span',undefined,'gd'));
    b.setAttribute('aria-label',dayLabel(k)+', '+({flower:'jejum que conta na sequência',sprout:'jejum feito',soil:'sem jejum'})[kind]+(wet?', meta de água batida':''));b.setAttribute('aria-pressed',String(k===selectedDay));
    b.onclick=()=>{selectedDay=k;renderHistory();document.querySelector('.day-details')?.scrollIntoView?.({block:'nearest',behavior:'smooth'})}}
-  g.append(b)}}
+  if(fut)b.setAttribute('aria-label',dayLabel(k)+', ainda não chegou');g.append(b)}}
 
 /* ---------- semana ---------- */
 let wkOff=0;
